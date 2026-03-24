@@ -4,7 +4,11 @@
 #include <map>
 using namespace std;
 
-
+struct Transition {
+    string nextState;
+    string writeSymbol;
+    string direction;
+};
 
 string decoder(string machine){
     string output;
@@ -23,11 +27,8 @@ string decoder(string machine){
 }
 
 
-struct Transition {
-    string nextState;
-    string writeSymbol;
-    string direction;
-};
+
+
 
 int main() {
 
@@ -37,10 +38,8 @@ int main() {
     getline(cin, machine);
     getline(cin, input);
 
-   
     string decodedMachine = decoder(machine);
 
-   
     vector<string> instru;
     string part;
     stringstream ss(decodedMachine);
@@ -50,7 +49,6 @@ int main() {
             instru.push_back(part);
     }
 
-    
     map<pair<string, string>, Transition> delta;
 
     for (string instr : instru) {
@@ -73,7 +71,6 @@ int main() {
         delta[{qi, sn}] = {qj, sm, D};
     }
 
-  
     vector<string> tape;
 
     if (input == "_") {
@@ -88,10 +85,8 @@ int main() {
     int head = 0;
     int steps = 0;
 
-    
     while (steps < 1000000) {
 
-        // ✅ SAFE tape expansion BEFORE access
         if (head < 0) {
             tape.insert(tape.begin(), "_");
             head = 0;
@@ -108,43 +103,42 @@ int main() {
 
         Transition t = delta[{currentState, currentSymbol}];
 
-        // write
         tape[head] = t.writeSymbol;
 
-        // move
-        if (t.direction == "00") head++;        // R
-        else if (t.direction == "10") head--;   // L
-        else if (t.direction == "0") {
-            // Stay
-        }
+        if (t.direction == "00") head++;
+        else if (t.direction == "10") head--;
 
         currentState = t.nextState;
         steps++;
 
-        // halt if accept/reject
         if (currentState == "1" || currentState == "10") break;
     }
 
-    
     int start = 0;
-    while (start < tape.size() && tape[start] == "_") start++;
+    while (start < tape.size() && tape[start] == "_" && start != head) {
+        start++;
+    }
 
     int end = tape.size() - 1;
-    while (end >= 0 && tape[end] == "_") end--;
+    while (end >= 0 && tape[end] == "_" && end != head) {
+        end--;
+    }
 
-    // if tape is all blanks
     if (start > end) {
         cout << "#" << currentState << "#_" << endl;
         return 0;
     }
 
- 
     string left = "";
     string right = "";
 
     for (int i = start; i <= end; i++) {
         if (i < head) left += tape[i];
         else right += tape[i];
+    }
+
+    if (left == "" && head == start && tape[head] == "_") {
+        right = "_" + right;
     }
 
     cout << left << "#" << currentState << "#" << right << endl;
